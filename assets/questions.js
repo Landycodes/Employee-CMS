@@ -8,10 +8,20 @@ const db = mysql.createConnection(
     },
     console.log('connection made to employee database')
 );
-db.query('SELECT title FROM role', (err, data) => {
-    console.log(data)
-    })
 
+let roleArray = [];
+function getRole() {
+    db.query('SELECT title FROM role', (err, data) => {
+        for (let i = 0; i < data.length; i++) {
+            roleArray.push(Object.values(data[i]))
+        }
+    roleArray = roleArray.flat(1)
+    console.log(roleArray)
+    return roleArray;
+});
+};
+
+getRole()
 const Questions = {
     mainMenu: {
         type: 'list',
@@ -42,7 +52,7 @@ const Questions = {
             type: 'list',
             name: 'role',
             message: 'Enter employee role',
-            choices: ['role1', 'role2' /*available roles*/]
+            choices: roleArray//['role1', 'role2' /*available roles*/]
         },
         {
             type: 'list',

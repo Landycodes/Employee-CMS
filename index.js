@@ -15,19 +15,6 @@ const db = mysql.createConnection(
     console.log('connection made to employee database')
 );
 
-// function getRole() {
-//     let roleArray = [];
-//     db.query('SELECT title FROM role', (err, data) => {
-//         for (let i = 0; i < data.length; i++) {
-//             roleArray.push(Object.values(data[i]))
-//         }
-//     roleArray = roleArray.flat(1)
-//     console.log(roleArray)
-//     return roleArray;
-// });
-// }
-//getRole()
-
 function viewEmployee() {
     db.query(employeeTable, (err, data) => {
         data ? console.table(data) : console.log(err)
