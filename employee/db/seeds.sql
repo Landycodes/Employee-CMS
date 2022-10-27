@@ -18,8 +18,8 @@ VALUES
 INSERT INTO employee (first_name, last_name, role_id, manager_id)
 VALUES 
     ('Andrew', 'Landry', 01, null),
-    ('mike', 'hawk', 03, 1),
-    ('ligma', 'balls', 04, 2),
+    ('mike', 'jones', 03, 1),
+    ('lilac', 'spheres', 04, 2),
     ('bart', 'skrimpson', 03, 1),
     ('alyssha', 'keys', 02, 2),
     ('kristina', 'Landry', 01, null),

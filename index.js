@@ -47,7 +47,7 @@ db.query("SELECT CONCAT(first_name,' ', last_name) FROM employee;", (err, data) 
 //SHOWS EMPLOYEE TABLE
 function viewEmployee() {
     db.query(employeeTable, (err, data) => {
-        data ? console.table(data) : console.log(err)
+        data !== [] ? console.table(data) : console.log(err)
         MENU()
     })
 }
