@@ -1,4 +1,4 @@
-//write prompts and menus here
+//IMPORT DEPENDENCIES AND QUERIES
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const {employeeTable, roleTable, departmentTable} = require('./employee/queries');
@@ -16,10 +16,12 @@ const db = mysql.createConnection(
 );
 
 //POPULATES CHOICES FOR COMMAND PROMPTS
-let roleArray = [];
+let roleArray;
 let employeeArr = [];
 let deptArr = [];
+
 function fillPrompts() {
+    roleArray = [];
     db.query('SELECT title FROM role', (err, data) => {
         for (let i = 0; i < data.length; i++) {
             roleArray.push(Object.values(data[i]))
@@ -42,8 +44,6 @@ db.query("SELECT CONCAT(first_name,' ', last_name) FROM employee;", (err, data) 
     return deptArr
 });
 };
-fillPrompts();
-
 //SHOWS EMPLOYEE TABLE
 function viewEmployee() {
     db.query(employeeTable, (err, data) => {
@@ -84,7 +84,6 @@ function employeeInfo() {
         MENU();
     })
 };
-
 //PROMPTS TO SELECT EMPLOYEE AND ROLE, RETURNS MENU
 function updateRole() {
     inquirer.prompt([
@@ -138,8 +137,11 @@ function newRole() {
     ])
     .then((nrData) => {
         console.log(nrData)
-        console.log('add to role table db')
+        db.query('INSERT INTO role (title, salary, department_id) VALUES (?,?,?)', ['testrole', '10000', 'department_1'], (err, data) => {
+        data ? console.log('role added!') : console.log('sOmEtHiNg WeNt WrOnG\n' + err)
         MENU();
+    })
+        console.log('add to role table db')
     })
 };
 
@@ -166,6 +168,7 @@ function newDepartment() {
     })
 };
 
+fillPrompts();
 //PROMPTS MAIN MENU AND RUNS ALL FUNCTIONS
 function MENU() {
 inquirer.prompt({
@@ -189,6 +192,7 @@ inquirer.prompt({
             break;
         case 'add an employee':
             employeeInfo();
+            fillPrompts();
             break;
         case 'update an employee role':
             updateRole();
