@@ -13,47 +13,57 @@ const db = mysql.createConnection(
         database: 'employee_db'
     },
     console.log('connection made to employee database')
-);
+); 
 
-//POPULATES CHOICES FOR COMMAND PROMPTS
-let roleArray;
-let employeeArr = [];
-let deptArr = [];
+console.log(" _____                 _                       \r\n| ____|_ __ ___  _ __ | | ___  _   _  ___  ___ \r\n|  _| | \'_ ` _ \\| \'_ \\| |\/ _ \\| | | |\/ _ \\\/ _ \\\r\n| |___| | | | | | |_) | | (_) | |_| |  __\/  __\/\r\n|_____|_| |_| |_| .__\/|_|\\___\/ \\__, |\\___|\\___|\r\n                |_|            |___\/           \r\n __  __                                   \r\n|  \\\/  | __ _ _ __   __ _  __ _  ___ _ __ \r\n| |\\\/| |\/ _` | \'_ \\ \/ _` |\/ _` |\/ _ \\ \'__|\r\n| |  | | (_| | | | | (_| | (_| |  __\/ |   \r\n|_|  |_|\\__,_|_| |_|\\__,_|\\__, |\\___|_|   \r\n                          |___\/           \r\n")
 
-function fillPrompts() {
-    roleArray = [];
-    db.query('SELECT title FROM role', (err, data) => {
-        for (let i = 0; i < data.length; i++) {
-            roleArray.push(Object.values(data[i]))
-        }
-    roleArray = roleArray.flat(1)
-    return roleArray
-});
-db.query("SELECT CONCAT(first_name,' ', last_name) FROM employee;", (err, data) => {
-        for (let i = 0; i < data.length; i++) {
-            employeeArr.push(Object.values(data[i]))
-        }
-    employeeArr = employeeArr.flat(1)
-    return employeeArr
-});
-    db.query("SELECT name FROM department;", (err, data) => {
-        for (let i = 0; i < data.length; i++) {
-            deptArr.push(Object.values(data[i]))
-        }
-    deptArr = deptArr.flat(1)
-    return deptArr
-});
-};
+
 //SHOWS EMPLOYEE TABLE
 function viewEmployee() {
     db.query(employeeTable, (err, data) => {
-        data !== [] ? console.table(data) : console.log(err)
-        MENU()
+        data ? console.table(data) : console.log(err)
+        MENU();
     })
-}
+};
+
+//SHOWS DEPARTMENT TABLE
+function viewDepartments(){
+    db.query(departmentTable, (err, data) => {
+       data ? console.table(data) : console.log(err)
+       MENU();
+   });
+};
+
+//SHOWS ROLE TABLE
+function viewRole() {
+    db.query(roleTable, (err, data) => {
+        data ? console.table(data) : console.log(err)
+        MENU();
+    })
+};
 
 //PROMPTS 'ADD AN EMPLOYEE' QUESTIONS AND RETURNS MENU
 function employeeInfo() {
+    //set role choices
+    let roleArray = [];
+    db.query('SELECT role.title, role.id FROM role', (err, data) => {
+        data = data.map(({ title, id }) => ({name: title, value: id}));
+        for (let i = 0; i < data.length; i++) {
+            roleArray.push(data[i])
+        }
+    return roleArray;
+    });
+
+    //set manager choices
+    let managerArray = [];
+    db.query('SELECT CONCAT(first_name , \', \' , last_name) as manager, employee.id FROM employee ;', (err, data) => {
+        data = data.map(({ manager, id }) => ({name: manager, value: id}));
+        for (let i = 0; i < data.length; i++) {
+            managerArray.push(data[i])
+        }
+        managerArray.push({name: 'None', value: null})
+        return managerArray;
+    })
     inquirer.prompt([
         {
             type: 'input',
@@ -75,48 +85,32 @@ function employeeInfo() {
             type: 'list',
             name: 'manager',
             message: "Who is this employee's manager?",
-            choices: ['fixme']
+            choices: managerArray
         }
     ])
     .then((empData) => {
-        console.log(empData);
-        console.log('send this info to database employee table');
+        db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id)
+            VALUES ('${empData.firstName}', '${empData.lastName}', ${empData.role}, ${empData.manager});`, (err, data) => {
+                data ? true
+                    : console.log(err)
+            }) 
+
+        console.log('***Employee added to database!***');
         MENU();
     })
-};
-//PROMPTS TO SELECT EMPLOYEE AND ROLE, RETURNS MENU
-function updateRole() {
-    inquirer.prompt([
-        {
-            type: 'list',
-            name: 'select_employee',
-            message: 'Which employee role do you want to update?',
-            choices: employeeArr
-        },
-        {
-            type: 'list',
-            name: 'employee_role',
-            message: 'Assign a role to employee', //maybe change employee to ${updateEmployee.select_employee} name
-            choices: roleArray 
-        }
-    ])
-    .then((upRole) => {
-        console.log(upRole);
-        console.log('add update to database role table');
-        MENU();
-    })
+    
 };
 
-//SHOWS ROLE TABLE
-function viewRole() {
-    db.query(roleTable, (err, data) => {
-        data ? console.table(data) : console.log(err)
-        MENU();
-    })
-};
-
-//PROMPTS ROLE INFORMATION AND RETURNS MENU
+//PROMPTS add ROLE INFORMATION AND RETURNS MENU
 function newRole() {
+    let deptArray = [];
+    db.query('SELECT name, id FROM department', (err, data) => {
+        data = data.map(({ name, id }) => ({name: name, value: id}));
+        for (let i = 0; i < data.length; i++) {
+            deptArray.push(data[i])
+        }
+    return deptArray;
+    });
     inquirer.prompt([
         {
             type: 'input',
@@ -132,26 +126,17 @@ function newRole() {
             type: 'list',
             name: 'roleDepartment',
             message: 'What department does this role belong to?',
-            choices: deptArr
+            choices: deptArray
         }
     ])
     .then((nrData) => {
-        console.log(nrData)
-        db.query('INSERT INTO role (title, salary, department_id) VALUES (?,?,?)', ['testrole', '10000', 'department_1'], (err, data) => {
-        data ? console.log('role added!') : console.log('sOmEtHiNg WeNt WrOnG\n' + err)
-        MENU();
-    })
-        console.log('add to role table db')
+        db.query(`INSERT INTO role (title, salary, department_id) VALUES ('${nrData.roleName}', ${nrData.roleSalary}, ${nrData.roleDepartment});`, (err, data) => {
+            data ? console.log('***role added!***') : console.log('sOmEtHiNg WeNt WrOnG\n' + err)
+            MENU();
+        })
     })
 };
 
-//SHOWS DEPARTMENT TABLE
-function viewDepartments(){
-    db.query(departmentTable, (err, data) => {
-       data ? console.table(data) : console.log(err)
-       MENU();
-   });
-};
 
 //PROMPTS FOR DEPARTMENT NAME, ADDS TO TABLE AND RETURNS MENU
 function newDepartment() {
@@ -162,13 +147,60 @@ function newDepartment() {
     })
     .then((depData) => {
         db.query('INSERT INTO department (name) VALUES (?)', depData.departmentName, (err, depData) => {
-            depData != null ? console.log('Department added!') : console.log('Cannot add empty value\n' + err)
+            depData != null ? console.log('***Department added!***') : console.log('Cannot add empty value\n' + err)
             MENU();
         })
     })
 };
 
-fillPrompts();
+//PROMPTS TO SELECT EMPLOYEE AND ROLE, RETURNS MENU
+function updateRole() {
+    let empArray = [];
+    db.query('SELECT CONCAT(first_name , \', \' , last_name) as name, employee.id FROM employee;', (err, data) => {
+        !data ? console.error(err)
+            : data = data.map(({ name, id }) => ({name: name, value: id}));
+        for (let i = 0; i < data.length; i++) {
+            empArray.push(data[i])
+        }
+        return empArray;
+    });
+    console.log(empArray)
+    let roleArray = [];
+    db.query('SELECT role.title, role.id FROM role', (err, data) => {
+        data = data.map(({ title, id }) => ({name: title, value: id}));
+        for (let i = 0; i < data.length; i++) {
+            roleArray.push(data[i])
+        }
+    return roleArray;
+    });
+    inquirer.prompt([
+        {
+            type: 'list',
+            name: 'select_employee',
+            message: 'Which employee role do you want to update?',
+            choices: empArray
+        },
+        {
+            type: 'list',
+            name: 'employee_role',
+            message: 'Assign a role to employee', //maybe change employee to ${updateEmployee.select_employee} name
+            choices: roleArray 
+        }
+    ])
+    .then((upRole) => {
+        console.log(upRole);
+        console.log('add update to database role table');
+        MENU();
+    })
+};
+//update role array values not being pushed outside of query function
+
+
+
+
+
+
+
 //PROMPTS MAIN MENU AND RUNS ALL FUNCTIONS
 function MENU() {
 inquirer.prompt({
@@ -192,7 +224,6 @@ inquirer.prompt({
             break;
         case 'add an employee':
             employeeInfo();
-            fillPrompts();
             break;
         case 'update an employee role':
             updateRole();
