@@ -29,5 +29,3 @@ CREATE TABLE employee (
     FOREIGN KEY (manager_id)
     REFERENCES employee(id)
 );
-
---manager_id null if employee has no manager

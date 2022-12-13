@@ -15,6 +15,7 @@ const db = mysql.createConnection(
     console.log('connection made to employee database')
 ); 
 
+//title ACSII
 console.log(" _____                 _                       \r\n| ____|_ __ ___  _ __ | | ___  _   _  ___  ___ \r\n|  _| | \'_ ` _ \\| \'_ \\| |\/ _ \\| | | |\/ _ \\\/ _ \\\r\n| |___| | | | | | |_) | | (_) | |_| |  __\/  __\/\r\n|_____|_| |_| |_| .__\/|_|\\___\/ \\__, |\\___|\\___|\r\n                |_|            |___\/           \r\n __  __                                   \r\n|  \\\/  | __ _ _ __   __ _  __ _  ___ _ __ \r\n| |\\\/| |\/ _` | \'_ \\ \/ _` |\/ _` |\/ _ \\ \'__|\r\n| |  | | (_| | | | | (_| | (_| |  __\/ |   \r\n|_|  |_|\\__,_|_| |_|\\__,_|\\__, |\\___|_|   \r\n                          |___\/           \r\n")
 
 
@@ -47,7 +48,9 @@ function employeeInfo() {
     //set role choices
     let roleArray = [];
     db.query('SELECT role.title, role.id FROM role', (err, data) => {
-        data = data.map(({ title, id }) => ({name: title, value: id}));
+        !data 
+            ? console.error(err)
+            : data = data.map(({ title, id }) => ({name: title, value: id}));
         for (let i = 0; i < data.length; i++) {
             roleArray.push(data[i])
         }
@@ -57,7 +60,9 @@ function employeeInfo() {
     //set manager choices
     let managerArray = [];
     db.query('SELECT CONCAT(first_name , \', \' , last_name) as manager, employee.id FROM employee ;', (err, data) => {
-        data = data.map(({ manager, id }) => ({name: manager, value: id}));
+        !data 
+            ? console.error(err)
+            : data = data.map(({ manager, id }) => ({name: manager, value: id}));
         for (let i = 0; i < data.length; i++) {
             managerArray.push(data[i])
         }
@@ -105,7 +110,9 @@ function employeeInfo() {
 function newRole() {
     let deptArray = [];
     db.query('SELECT name, id FROM department', (err, data) => {
-        data = data.map(({ name, id }) => ({name: name, value: id}));
+        !data 
+            ? console.error(err)
+            : data = data.map(({ name, id }) => ({name: name, value: id}));
         for (let i = 0; i < data.length; i++) {
             deptArray.push(data[i])
         }
@@ -156,49 +163,52 @@ function newDepartment() {
 //PROMPTS TO SELECT EMPLOYEE AND ROLE, RETURNS MENU
 function updateRole() {
     let empArray = [];
-    db.query('SELECT CONCAT(first_name , \', \' , last_name) as name, employee.id FROM employee;', (err, data) => {
-        !data ? console.error(err)
-            : data = data.map(({ name, id }) => ({name: name, value: id}));
-        for (let i = 0; i < data.length; i++) {
-            empArray.push(data[i])
-        }
-        return empArray;
-    });
-    console.log(empArray)
     let roleArray = [];
-    db.query('SELECT role.title, role.id FROM role', (err, data) => {
-        data = data.map(({ title, id }) => ({name: title, value: id}));
-        for (let i = 0; i < data.length; i++) {
-            roleArray.push(data[i])
+
+   db.query('SELECT CONCAT(first_name , \', \' , last_name) as name, employee.id FROM employee;', (err, data) => {
+        !data 
+            ? console.error(err)
+            : data = data.map(({ name, id }) => ({name: name, value: id}));
+            for (let i = 0; i < data.length; i++) {
+                empArray.push(data[i])
         }
-    return roleArray;
-    });
-    inquirer.prompt([
-        {
-            type: 'list',
-            name: 'select_employee',
-            message: 'Which employee role do you want to update?',
-            choices: empArray
-        },
-        {
-            type: 'list',
-            name: 'employee_role',
-            message: 'Assign a role to employee', //maybe change employee to ${updateEmployee.select_employee} name
-            choices: roleArray 
-        }
-    ])
-    .then((upRole) => {
-        console.log(upRole);
-        console.log('add update to database role table');
-        MENU();
+
+        inquirer.prompt([
+            {
+                type: 'list',
+                name: 'select_employee',
+                message: 'Which employee role do you want to update?',
+                choices: empArray
+            }
+        ])
+        .then(({select_employee}) => {
+            db.query('SELECT role.title, role.id FROM role', (err, data) => {
+                !data 
+                    ? console.error(err)
+                    : data = data.map(({ title, id }) => ({name: title, value: id}));
+                for (let i = 0; i < data.length; i++) {
+                    roleArray.push(data[i])
+                }
+                inquirer.prompt([
+                    {
+                        type: 'list',
+                        name: 'employee_role',
+                        message: 'Assign a role to employee', //maybe change employee to ${updateEmployee.select_employee} name
+                        choices: roleArray 
+                    }
+                ])
+                .then(({employee_role}) => {
+                    db.query(`UPDATE employee SET role_id = ${employee_role} WHERE id = ${select_employee};`, (err, data) => {
+                        !data
+                            ? console.error(err)
+                            : console.log('***Employee has been updated***')
+                            MENU()
+                    })
+                })
+            })    
+        })
     })
 };
-//update role array values not being pushed outside of query function
-
-
-
-
-
 
 
 //PROMPTS MAIN MENU AND RUNS ALL FUNCTIONS
